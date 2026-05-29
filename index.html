@@ -1,1 +1,91 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="utf-8" />
+    <title>রেলওয়ে + ধরখার মৌজা ম্যাপ (Google Maps Backend)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+    <style>
+        html, body, #map {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script>
+    // ১. ম্যাপ ইনিশিয়ালাইজেশন (ব্রাহ্মণবাড়িয়া আখাউড়া ধরখার কেন্দ্রিক জুম)
+    var map = L.map('map').setView([23.8650, 91.2134], 14);
+
+    // ----------------------------------------------------
+    // ২. গুগল ম্যাপস লেয়ার সমূহ (Google Maps Base Layers)
+    // ----------------------------------------------------
+    var googleRoadmap = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+        attribution: '© Google Maps'
+    }).addTo(map); // ডিফল্ট Roadmap অন থাকবে
+
+    var googleSatellite = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+        attribution: '© Google Maps'
+    });
+
+    // ----------------------------------------------------
+    // ৩. গিটহাব থেকে বটের আনা ধরখার মৌজার লেয়ার যোগ করা
+    // ----------------------------------------------------
+    var dharkharLayer = L.layerGroup();
+    
+    // আপনার অ্যাকাউন্টের লাইভ লিঙ্ক এখানে সেট করে দেওয়া হয়েছে
+    fetch('https://raw.githubusercontent.com/asraful29661699/bd-land-railway-map/main/dharkhar_005.geojson')
+        .then(response => response.json())
+        .then(geojsonData => {
+            L.geoJSON(geojsonData, {
+                style: function (feature) {
+                    return {
+                        color: "#ff0000",      // মৌজার লাইনের বর্ডার কালার (লাল)
+                        weight: 2,             // বর্ডার লাইনের পুরুত্ব
+                        fillColor: "#ff0000",
+                        fillOpacity: 0.1       // ভেতরের আবছা কালার
+                    };
+                },
+                onEachFeature: function (feature, layer) {
+                    // দাগ নম্বর বা খতিয়ান তথ্য থাকলে তা ক্লিক করলে পপআপে দেখাবে
+                    if (feature.properties && feature.properties.dag_no) {
+                        layer.bindPopup("<b>দাগ নম্বর:</b> " + feature.properties.dag_no);
+                    } else if (feature.properties && feature.properties.mouza_name) {
+                        layer.bindPopup("<b>মৌজা:</b> " + feature.properties.mouza_name);
+                    }
+                }
+            }).addTo(dharkharLayer);
+        })
+        .catch(err => console.log("গিটহাব ডেটা ফাইলটি এখনো তৈরি হয়নি বা লিঙ্কে সমস্যা আছে।"));
+
+    // ডিফল্টভাবে লেয়ারটি ম্যাপে লোড করে রাখা হলো
+    dharkharLayer.addTo(map);
+
+    // ----------------------------------------------------
+    // ৪. লেয়ার কন্ট্রোল প্যানেল (ডানদিকের মেনু)
+    // ----------------------------------------------------
+    var baseMaps = {
+        "গুগল ম্যাপ (Roadmap)": googleRoadmap,
+        "গুগল স্যাটেলাইট (Satellite)": googleSatellite
+    };
+
+    var overlayMaps = {
+        "০০৫-ধরখার মৌজা লেয়ার": dharkharLayer
+    };
+
+    L.control.layers(baseMaps, overlayMaps).addTo(map);
+
+</script>
+</body>
+</html>
