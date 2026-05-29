@@ -1,1 +1,35 @@
+name: Land Map Scraper Bot
 
+on:
+  schedule:
+    - cron: '0 0 * * *' # প্রতিদিন রাত ১২টায় (UTC) বটটি অটোমেটিক রান হবে
+  workflow_dispatch: # এর মাধ্যমে আপনি ম্যানুয়ালি যেকোনো সময় বট চালাতে পারবেন
+
+jobs:
+  run-bot-job:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 1.  রিপোজিটরি ক্লোন করা
+      uses: actions/checkout@v3
+
+    - name: 2. পাইথন এনভায়রনমেন্ট সেটআপ
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: 3. প্রয়োজনীয় লাইব্রেরি ইনস্টল করা
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+
+    - name: 4. পাইথন বট স্ক্রিপ্ট রান করা
+      run: python bot.py
+
+    - name: 5. নতুন ম্যাপ ফাইল গিটহাবে অটো-পুশ করা
+      run: |
+        git config --global user.name "GitHub Automation Bot"
+        git config --global user.email "actions@github.com"
+        git add dharkhar_005.geojson
+        git commit -m "🤖 Bot: Auto-updated Dharkhar Mouza Layer Data" || exit 0
+        git push
